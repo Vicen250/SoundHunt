@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>SoundHunt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #f7f7f5;
+    --surface:  #ffffff;
+    --border:   #e8e8e3;
+    --border2:  #d0d0c8;
+    --text:     #1a1a18;
+    --muted:    #888880;
+    --accent:   #2563eb;
+    --accent-l: #eff4ff;
+    --red:      #dc2626;
+    --green:    #16a34a;
+    --amber:    #d97706;
+    --radius:   10px;
+    --shadow:   0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md:0 4px 14px rgba(0,0,0,0.09);
+    --player-h: 78px;
+    --font:     'Inter', system-ui, sans-serif;
+    --mono:     'JetBrains Mono', monospace;
+  }
+
+  html, body {
+    height: 100%; width: 100%;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+
+  #app {
+    display: flex; flex-direction: column;
+    height: 100%; max-width: 480px;
+    margin: 0 auto; background: var(--bg);
+    position: relative;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 18px 16px 0;
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 50;
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 9px;
+    margin-bottom: 14px;
+  }
+  .logo-icon {
+    width: 28px; height: 28px;
+    background: var(--text); border-radius: 7px;
+    display: grid; place-items: center; flex-shrink: 0;
+  }
+  .logo-icon svg { width: 15px; height: 15px; }
+  .logo-title { font-size: 16px; font-weight: 600; letter-spacing: -.3px; }
+  .logo-badge {
+    margin-left: auto;
+    font-size: 10px; font-family: var(--mono);
+    background: var(--border); color: var(--muted);
+    padding: 2px 7px; border-radius: 20px;
+  }
+
+  /* Search */
+  .search-wrap { position: relative; margin-bottom: 10px; }
+  .s-icon {
+    position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); pointer-events: none;
+  }
+  #searchInput {
+    width: 100%;
+    padding: 11px 40px 11px 36px;
+    border: 1.5px solid var(--border2);
+    border-radius: var(--radius);
+    font-family: var(--font); font-size: 15px;
+    background: var(--surface); color: var(--text);
+    outline: none; transition: border-color .15s;
+    -webkit-appearance: none;
+  }
+  #searchInput:focus { border-color: var(--accent); }
+  #searchInput::placeholder { color: var(--muted); }
+  #clearBtn {
+    position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
+    display: none; background: none; border: none; cursor: pointer;
+    color: var(--muted); padding: 5px; border-radius: 50%;
+    align-items: center; justify-content: center;
+  }
+  #clearBtn:hover { color: var(--text); background: var(--border); }
+  #clearBtn.show { display: flex; }
+
+  /* Autocomplete */
+  #autocomplete {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--surface);
+    border: 1.5px solid var(--border2);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    z-index: 120; display: none; overflow: hidden;
+  }
+  #autocomplete.open { display: block; }
+  .ac-label {
+    padding: 6px 13px 3px;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .8px;
+    color: var(--muted); background: var(--bg);
+  }
+  .ac-row {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 13px;
+    font-size: 13px; cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background .1s;
+  }
+  .ac-row:last-child { border-bottom: none; }
+  .ac-row:hover, .ac-row.hi { background: var(--accent-l); }
+  .ac-row svg { color: var(--muted); flex-shrink: 0; }
+
+  /* Filters bar */
+  .fbar {
+    display: flex; gap: 6px;
+    overflow-x: auto; padding-bottom: 10px;
+    scrollbar-width: none;
+  }
+  .fbar::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0;
+    display: flex; align-items: center; gap: 4px;
+    padding: 5px 11px;
+    border: 1.5px solid var(--border2); border-radius: 20px;
+    font-size: 12px; font-weight: 500;
+    background: var(--surface); color: var(--text);
+    cursor: pointer; transition: all .15s; white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.on { background: var(--text); border-color: var(--text); color: var(--bg); }
+  .chip svg { width: 11px; height: 11px; }
+
+  /* Filter panel */
+  #fpanel {
+    display: none; flex-direction: column; gap: 14px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px; margin-bottom: 10px;
+  }
+  #fpanel.open { display: flex; }
+  .fg label {
+    display: block; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .7px;
+    color: var(--muted); margin-bottom: 7px;
+  }
+  .fopts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .fopt {
+    padding: 4px 10px;
+    border: 1.5px solid var(--border2); border-radius: 6px;
+    font-size: 12px; cursor: pointer; background: var(--bg);
+    transition: all .12s; user-select: none;
+  }
+  .fopt.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .rrow { display: flex; align-items: center; gap: 10px; }
+  .rrow input[type=range] { flex: 1; accent-color: var(--accent); }
+  .rval { font-family: var(--mono); font-size: 11px; color: var(--muted); min-width: 30px; text-align: right; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    border-bottom: 1.5px solid var(--border);
+  }
+  .tab {
+    flex: 1; padding: 8px 4px;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    font-size: 12px; font-weight: 500;
+    color: var(--muted); cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1.5px;
+    transition: all .15s;
+  }
+  .tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab svg { width: 13px; height: 13px; }
+
+  /* ── CONTENT ── */
+  #content {
+    flex: 1; overflow-y: auto;
+    padding: 0 12px calc(var(--player-h) + 18px);
+    scrollbar-width: thin; scrollbar-color: var(--border2) transparent;
+  }
+  #content::-webkit-scrollbar { width: 3px; }
+  #content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  .pane { display: none; }
+  .pane.on { display: block; }
+
+  /* Empty state */
+  .empty {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 56px 24px; gap: 10px; color: var(--muted); text-align: center;
+  }
+  .empty svg { opacity: .25; }
+  .empty p { font-size: 14px; color: var(--text); }
+  .empty small { font-size: 12px; line-height: 1.6; }
+
+  /* Result info */
+  .rinfo {
+    font-size: 11px; font-family: var(--mono);
+    color: var(--muted); padding: 10px 0 2px;
+  }
+
+  /* Sound card */
+  .card {
+    display: flex; align-items: center; gap: 11px;
+    padding: 11px 11px 11px 12px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    margin-top: 7px; cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+    position: relative; overflow: hidden;
+    flex-wrap: wrap;
+  }
+  .card:hover { border-color: var(--border2); box-shadow: var(--shadow); }
+  .card.playing { border-color: var(--accent); }
+
+  .c-play {
+    flex-shrink: 0; width: 38px; height: 38px;
+    border-radius: 50%; background: var(--bg);
+    border: 1.5px solid var(--border2);
+    display: grid; place-items: center; color: var(--text);
+    transition: all .15s;
+  }
+  .card.playing .c-play { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .c-play svg { width: 15px; height: 15px; }
+
+  .c-info { flex: 1; min-width: 0; }
+  .c-name {
+    font-size: 13px; font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+  .c-meta {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    font-size: 11px; color: var(--muted); font-family: var(--mono);
+    align-items: center;
+  }
+  .badge {
+    padding: 2px 5px; border-radius: 4px;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .3px;
+  }
+  .bwav  { background:#f0fdf4; color:#15803d; }
+  .bmp3  { background:#eff6ff; color:#1d4ed8; }
+  .bogg  { background:#fff7ed; color:#b45309; }
+  .bflac { background:#faf5ff; color:#7c3aed; }
+  .baiff { background:#fef2f2; color:#b91c1c; }
+
+  .c-acts { display: flex; flex-direction: column; gap: 4px; }
+  .ibtn {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); display: grid; place-items: center;
+    transition: all .12s;
+  }
+  .ibtn:hover { background: var(--bg); color: var(--text); }
+  .ibtn.fav { color: var(--red); }
+  .ibtn svg { width: 14px; height: 14px; }
+
+  /* Waveform row — full width under card content */
+  .c-wf {
+    width: 100%; display: none;
+    height: 34px; margin-top: 4px;
+    cursor: pointer; position: relative;
+  }
+  .card.playing .c-wf { display: block; }
+  .c-wf canvas { width: 100%; height: 34px; display: block; border-radius: 4px; }
+
+  /* Progress bar at bottom of card */
+  .c-prog {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    background: var(--border);
+  }
+  .card.playing .c-prog { display: block; }
+  .c-prog-fill {
+    height: 100%; background: var(--accent); width: 0%;
+  }
+
+  /* Loader */
+  #loader { text-align: center; padding: 20px; font-size: 12px; color: var(--muted); display: none; }
+  #loader.show { display: block; }
+  .spin {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border2); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .7s linear infinite;
+    display: inline-block; margin-right: 5px; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* History */
+  .hitem {
+    display: flex; align-items: center; gap: 9px;
+    padding: 10px 11px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); margin-top: 7px;
+    cursor: pointer; font-size: 13px;
+    transition: border-color .15s;
+  }
+  .hitem:hover { border-color: var(--border2); }
+  .hitem svg { color: var(--muted); flex-shrink: 0; }
+  .hitem span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hdel { background: none; border: none; cursor: pointer; color: var(--muted); padding: 3px; border-radius: 4px; display: grid; place-items: center; }
+  .hdel:hover { color: var(--red); }
+  .sec-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0 4px;
+  }
+  .sec-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); }
+  .sec-act { font-size: 11px; color: var(--accent); background: none; border: none; cursor: pointer; }
+
+  /* ── PLAYER ── */
+  #player {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 480px; height: var(--player-h);
+    background: var(--surface); border-top: 1.5px solid var(--border);
+    padding: 0 14px;
+    display: flex; align-items: center; gap: 10px;
+    z-index: 200; transition: transform .2s, opacity .2s;
+  }
+  #player.hidden { transform: translateX(-50%) translateY(100%); opacity: 0; pointer-events: none; }
+
+  .p-thumb {
+    flex-shrink: 0; width: 40px; height: 40px;
+    background: var(--bg); border: 1.5px solid var(--border2);
+    border-radius: 8px; display: grid; place-items: center; color: var(--muted);
+  }
+  .p-thumb svg { width: 16px; height: 16px; }
+  .p-info { flex: 1; min-width: 0; }
+  .p-title { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+  .p-sub { font-size: 10px; color: var(--muted); font-family: var(--mono); }
+
+  .p-ctrl { display: flex; align-items: center; gap: 2px; }
+  .pbtn {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: none; border: none; cursor: pointer; color: var(--text);
+    display: grid; place-items: center; transition: background .12s;
+  }
+  .pbtn:hover { background: var(--bg); }
+  .pbtn.main {
+    width: 36px; height: 36px;
+    background: var(--text); color: var(--bg);
+  }
+  .pbtn.main:hover { opacity: .85; }
+  .pbtn svg { width: 15px; height: 15px; }
+  .pbtn.main svg { width: 17px; height: 17px; }
+
+  .vol-wrap { display: flex; align-items: center; gap: 5px; }
+  .vbtn { background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; display: grid; place-items: center; border-radius: 4px; }
+  .vbtn:hover { color: var(--text); }
+  .vbtn svg { width: 14px; height: 14px; }
+  .vslider { width: 56px; accent-color: var(--accent); cursor: pointer; }
+
+  .p-prog {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    background: var(--border); cursor: pointer;
+  }
+  .p-prog-fill { height: 100%; background: var(--accent); width: 0%; }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: calc(var(--player-h) + 10px);
+    left: 50%; transform: translateX(-50%) translateY(6px);
+    background: var(--text); color: var(--bg);
+    font-size: 12px; padding: 7px 15px;
+    border-radius: 20px; opacity: 0;
+    transition: all .2s; z-index: 400;
+    pointer-events: none; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Dark mode */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101010;
+      --surface: #1a1a1a;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.14);
+      --text: #ebebeb;
+      --muted: #5e5e5e;
+      --accent-l: rgba(37,99,235,0.14);
+    }
+    .bwav  { background: rgba(21,128,61,.15);  color: #4ade80; }
+    .bmp3  { background: rgba(29,78,216,.15);  color: #93c5fd; }
+    .bogg  { background: rgba(180,83,9,.15);   color: #fcd34d; }
+    .bflac { background: rgba(124,58,237,.15); color: #c4b5fd; }
+    .baiff { background: rgba(185,28,28,.15);  color: #fca5a5; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg fill="none" viewBox="0 0 16 16" stroke="white" stroke-width="1.8">
+          <path d="M2 11 Q4 5 8 8 Q12 11 14 5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="logo-title">SoundHunt</span>
+      <span class="logo-badge">Freesound</span>
+    </div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <svg class="s-icon" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
+      </svg>
+      <input id="searchInput" type="search" placeholder="Buscar sonidos…"
+             autocomplete="off" autocorrect="off" spellcheck="false"/>
+      <button id="clearBtn" onclick="clearSearch()">
+        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <div id="autocomplete"></div>
+    </div>
+
+    <!-- Filter chips -->
+    <div class="fbar">
+      <button class="chip" id="ftoggle" onclick="toggleFPanel()">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18M7 12h10M11 18h2" stroke-linecap="round"/>
+        </svg>
+        Filtros
+      </button>
+      <button class="chip" id="cs-score"     onclick="setSort('score')">Relevancia</button>
+      <button class="chip" id="cs-downloads" onclick="setSort('downloads')">Descargas</button>
+      <button class="chip" id="cs-rating"    onclick="setSort('rating')">Valoración</button>
+      <button class="chip" id="cs-created"   onclick="setSort('created')">Reciente</button>
+    </div>
+
+    <!-- Filter panel -->
+    <div id="fpanel">
+      <div class="fg">
+        <label>Formato</label>
+        <div class="fopts" id="fmtG">
+          <div class="fopt on" data-v="">Todos</div>
+          <div class="fopt" data-v="wav">WAV</div>
+          <div class="fopt" data-v="mp3">MP3</div>
+          <div class="fopt" data-v="ogg">OGG</div>
+          <div class="fopt" data-v="flac">FLAC</div>
+          <div class="fopt" data-v="aiff">AIFF</div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Licencia</label>
+        <div class="fopts" id="licG">
+          <div class="fopt on" data-v="">Todas</div>
+          <div class="fopt" data-v="Attribution">Attribution</div>
+          <div class="fopt" data-v="Attribution Noncommercial">No-Comercial</div>
+          <div class="fopt" data-v="Creative Commons 0">CC0</div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Duración máx. <span class="rval" id="durLbl">∞</span></label>
+        <div class="rrow">
+          <input type="range" id="durR" min="0" max="300" value="300" step="5"
+                 oninput="onDur(this.value)"/>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Resultados por página</label>
+        <div class="fopts" id="ppG">
+          <div class="fopt" data-v="15">15</div>
+          <div class="fopt on" data-v="30">30</div>
+          <div class="fopt" data-v="50">50</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab on" id="t-results"   onclick="tab('results')">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
+        </svg>Resultados
+      </div>
+      <div class="tab" id="t-favorites" onclick="tab('favorites')">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path d="M12 21C12 21 3 14 3 8a5 5 0 0110 0 5 5 0 0110 0c0 6-9 13-9 13z"/>
+        </svg>Favoritos
+      </div>
+      <div class="tab" id="t-history"   onclick="tab('history')">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3" stroke-linecap="round"/>
+        </svg>Historial
+      </div>
+    </div>
+  </header>
+
+  <div id="content">
+
+    <!-- Results -->
+    <div class="pane on" id="p-results">
+      <div class="empty" id="emptyR">
+        <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+          <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
+        </svg>
+        <p>Busca cualquier sonido</p>
+        <small>Usa el campo superior para explorar<br/>la biblioteca de Freesound</small>
+      </div>
+      <div class="rinfo" id="rinfo" style="display:none"></div>
+      <div id="rlist"></div>
+      <div id="loader"><span class="spin"></span>Cargando más…</div>
+    </div>
+
+    <!-- Favorites -->
+    <div class="pane" id="p-favorites">
+      <div class="empty" id="emptyFav">
+        <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+          <path d="M12 21C12 21 3 14 3 8a5 5 0 0110 0 5 5 0 0110 0c0 6-9 13-9 13z"/>
+        </svg>
+        <p>Sin favoritos todavía</p>
+        <small>Pulsa el corazón en cualquier resultado</small>
+      </div>
+      <div id="flist"></div>
+    </div>
+
+    <!-- History -->
+    <div class="pane" id="p-history">
+      <div class="sec-head">
+        <span class="sec-title">Búsquedas recientes</span>
+        <button class="sec-act" onclick="clearHist()">Borrar todo</button>
+      </div>
+      <div class="empty" id="emptyH" style="display:none">
+        <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+          <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3" stroke-linecap="round"/>
+        </svg>
+        <p>Sin búsquedas recientes</p>
+      </div>
+      <div id="hlist"></div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- Player -->
+  <div id="player" class="hidden">
+    <div class="p-thumb">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 19V6l12-3v13" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="6" cy="19" r="3"/><circle cx="18" cy="16" r="3"/>
+      </svg>
+    </div>
+    <div class="p-info">
+      <div class="p-title" id="pTitle">—</div>
+      <div class="p-sub"   id="pSub">—</div>
+    </div>
+    <div class="p-ctrl">
+      <div class="vol-wrap">
+        <button class="vbtn" id="muteBtn" onclick="toggleMute()">
+          <svg id="vicon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="M11 5L6 9H2v6h4l5 4V5z" stroke-linecap="round"/>
+            <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <input type="range" class="vslider" id="vslider" min="0" max="100" value="80"
+               oninput="setVol(this.value)"/>
+      </div>
+      <button class="pbtn main" id="ppBtn" onclick="togglePlay()">
+        <svg id="ppIcon" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="pbtn" onclick="stopAudio()" title="Stop">
+        <svg fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+      </button>
+    </div>
+    <div class="p-prog" id="pprog" onclick="seek(event)">
+      <div class="p-prog-fill" id="pfill"></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  ⚙️  CONFIGURACIÓN — pon aquí tu API key
+// ══════════════════════════════════════════
+const API_KEY = 'VtycYwXclKOIIgkv5jaX';
+const BASE    = 'https://freesound.org/apiv2';
+
+// ── SUGERENCIAS DE AUTOCOMPLETADO ──
+const TAGS = [
+  'rain','thunder','wind','fire','water','ocean','river','forest','birds',
+  'footsteps','crowd','city','traffic','engine','explosion','impact','whoosh',
+  'piano','guitar','drums','bass','strings','violin','flute','trumpet',
+  'ambient','loop','drone','texture','noise','white noise',
+  'notification','click','beep','pop','swoosh','button',
+  'voice','laugh','applause','breathing','whisper',
+  'dog','cat','horse','frog','insect','whale',
+  'door','glass','wood','metal','paper','gravel',
+  'keyboard','typing','mouse','phone','camera'
+];
+
+// ── STATE ──
+let query     = '', page = 1, total = 0, hasMore = true, loading = false;
+let sort      = 'score', fFmt = '', fLic = '', fDur = 0, perPage = 30;
+let dTimer    = null, acIdx = -1;
+let audio     = new Audio();
+let current   = null, muted = false, lastVol = 80;
+let favs      = JSON.parse(localStorage.getItem('sh_favs') || '[]');
+let hist      = JSON.parse(localStorage.getItem('sh_hist') || '[]');
+let wfData    = {};
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded', () => {
+  renderHist(); renderFavs();
+  document.getElementById('cs-score').classList.add('on');
+
+  // Filter group clicks
+  bindGroup('fmtG', v => { fFmt = v; reSearch(); });
+  bindGroup('licG', v => { fLic = v; reSearch(); });
+  bindGroup('ppG',  v => { perPage = parseInt(v); reSearch(); });
+
+  // Search
+  const inp = document.getElementById('searchInput');
+  inp.addEventListener('input', e => {
+    const v = e.target.value.trim();
+    document.getElementById('clearBtn').classList.toggle('show', !!v);
+    showAC(v);
+    clearTimeout(dTimer);
+    if (v.length > 1) dTimer = setTimeout(() => { query = v; search(true); }, 480);
+    else if (!v) resetResults();
+  });
+  inp.addEventListener('keydown', e => {
+    const items = document.querySelectorAll('.ac-row');
+    if (e.key === 'Enter') {
+      closeAC();
+      query = inp.value.trim();
+      if (query) search(true);
+    } else if (e.key === 'ArrowDown') { acIdx = Math.min(acIdx+1, items.length-1); hlAC(); }
+    else if (e.key === 'ArrowUp')   { acIdx = Math.max(acIdx-1, 0); hlAC(); }
+    else if (e.key === 'Escape')    { closeAC(); }
+  });
+  inp.addEventListener('blur', () => setTimeout(closeAC, 160));
+
+  // Infinite scroll
+  document.getElementById('content').addEventListener('scroll', e => {
+    const el = e.target;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 100) loadMore();
+  });
+
+  // Audio events
+  audio.addEventListener('timeupdate', onTick);
+  audio.addEventListener('ended', onEnd);
+  audio.volume = 0.8;
+});
+
+function bindGroup(id, cb) {
+  document.querySelectorAll(`#${id} .fopt`).forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll(`#${id} .fopt`).forEach(x => x.classList.remove('on'));
+      el.classList.add('on');
+      cb(el.dataset.v);
+    });
+  });
+}
+
+function reSearch() { if (query) search(true); }
+
+// ── AUTOCOMPLETE ──
+function showAC(q) {
+  const box = document.getElementById('autocomplete');
+  if (!q) { closeAC(); return; }
+  const histM = hist.filter(h => h.toLowerCase().startsWith(q.toLowerCase()) && h !== q).slice(0,3);
+  const tagM  = TAGS.filter(t => t.startsWith(q.toLowerCase()) && t !== q.toLowerCase()).slice(0,5);
+  if (!histM.length && !tagM.length) { closeAC(); return; }
+
+  let html = '';
+  if (histM.length) {
+    html += `<div class="ac-label">Recientes</div>`;
+    histM.forEach(h => html += acRow(h, 'hist'));
+  }
+  if (tagM.length) {
+    html += `<div class="ac-label">Sugerencias</div>`;
+    tagM.forEach(t => html += acRow(t, 'tag'));
+  }
+  box.innerHTML = html;
+  box.classList.add('open');
+  acIdx = -1;
+}
+
+function acRow(text, type) {
+  const icon = type === 'hist'
+    ? `<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3" stroke-linecap="round"/></svg>`
+    : `<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35" stroke-linecap="round"/></svg>`;
+  return `<div class="ac-row" onclick="applyAC('${esc(text)}')">${icon}${esc(text)}</div>`;
+}
+
+function applyAC(v) {
+  document.getElementById('searchInput').value = v;
+  document.getElementById('clearBtn').classList.add('show');
+  closeAC(); query = v; search(true);
+}
+function hlAC() {
+  document.querySelectorAll('.ac-row').forEach((el,i) => el.classList.toggle('hi', i===acIdx));
+}
+function closeAC() { document.getElementById('autocomplete').classList.remove('open'); }
+
+// ── SEARCH ──
+async function search(reset=false) {
+  if (!query || loading) return;
+  if (reset) { page = 1; hasMore = true; document.getElementById('rlist').innerHTML = ''; }
+  if (!hasMore) return;
+
+  loading = true;
+  document.getElementById('loader').classList.add('show');
+  tab('results');
+  addHist(query);
+
+  try {
+    let filter = '';
+    if (fFmt) filter += ` type:${fFmt}`;
+    if (fLic) filter += ` license:"${fLic}"`;
+    if (fDur && fDur < 300) filter += ` duration:[0 TO ${fDur}]`;
+
+    const p = new URLSearchParams({
+      query, page, page_size: perPage, sort,
+      fields: 'id,name,username,duration,type,license,previews,download',
+      token: API_KEY
+    });
+    if (filter.trim()) p.set('filter', filter.trim());
+
+    const r = await fetch(`${BASE}/search/text/?${p}`);
+    const d = await r.json();
+
+    if (reset) {
+      total = d.count || 0;
+      const ri = document.getElementById('rinfo');
+      ri.style.display = 'block';
+      ri.textContent   = `${total.toLocaleString()} resultados`;
+      document.getElementById('emptyR').style.display = 'none';
+    }
+
+    if (d.results?.length) {
+      appendCards(d.results);
+      page++;
+      hasMore = !!d.next;
+    } else {
+      hasMore = false;
+      if (reset) showEmptyR();
+    }
+  } catch {
+    toast('Error. Verifica tu API key y conexión.');
+  }
+
+  loading = false;
+  document.getElementById('loader').classList.remove('show');
+}
+
+function loadMore() { if (!loading && hasMore && query) search(false); }
+
+function appendCards(sounds) {
+  const list = document.getElementById('rlist');
+  sounds.forEach(s => list.appendChild(mkCard(s)));
+}
+
+// ── CARD ──
+function mkCard(s) {
+  const isFav = favs.some(f => f.id === s.id);
+  const fmt   = (s.type||'').toLowerCase();
+  const bCls  = `badge b${fmt||'wav'}`;
+  const dur   = fmtDur(s.duration);
+  const sJson = JSON.stringify(s).replace(/"/g, '&quot;');
+
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.id = `card-${s.id}`;
+  el.innerHTML = `
+    <button class="c-play" onclick="play(${sJson})">
+      <svg id="cpi-${s.id}" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <div class="c-info">
+      <div class="c-name">${esc(s.name)}</div>
+      <div class="c-meta">
+        <span>${esc(s.username)}</span>
+        <span>${dur}</span>
+        <span class="${bCls}">${fmt||'?'}</span>
+      </div>
+    </div>
+    <div class="c-acts">
+      <button class="ibtn${isFav?' fav':''}" id="fb-${s.id}" onclick="toggleFav(event,${sJson})" title="${isFav?'Quitar favorito':'Añadir favorito'}">
+        <svg fill="${isFav?'currentColor':'none'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path d="M12 21C12 21 3 14 3 8a5 5 0 0110 0 5 5 0 0110 0c0 6-9 13-9 13z"/>
+        </svg>
+      </button>
+      <button class="ibtn" onclick="dlSound(event,'${s.id}','${esc(s.name)}')" title="Descargar">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v10M7 15l5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M5 20h14" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="c-wf" id="wfwrap-${s.id}">
+      <canvas id="wf-${s.id}" onclick="seekWf(event,'${s.id}')"></canvas>
+    </div>
+    <div class="c-prog"><div class="c-prog-fill" id="cp-${s.id}"></div></div>`;
+  return el;
+}
+
+// ── AUDIO ──
+function play(s) {
+  const url = s.previews?.['preview-hq-mp3'] || s.previews?.['preview-lq-mp3'];
+  if (!url) { toast('Sin preview disponible'); return; }
+
+  if (current?.id === s.id) { togglePlay(); return; }
+  if (current) deactCard(current.id);
+
+  current = s;
+  audio.src    = url;
+  audio.volume = lastVol / 100;
+  audio.play().catch(() => toast('No se pudo reproducir'));
+  actCard(s.id);
+  drawWF(s.id);
+  document.getElementById('pTitle').textContent = s.name;
+  document.getElementById('pSub').textContent   = `${s.username} · ${fmtDur(s.duration)}`;
+  document.getElementById('player').classList.remove('hidden');
+  setPP(false);
+}
+
+function actCard(id) {
+  const c = document.getElementById(`card-${id}`);
+  if (!c) return;
+  c.classList.add('playing');
+  document.getElementById(`cpi-${id}`).innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+}
+function deactCard(id) {
+  const c = document.getElementById(`card-${id}`);
+  if (!c) return;
+  c.classList.remove('playing');
+  const icon = document.getElementById(`cpi-${id}`);
+  if (icon) icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+}
+
+function togglePlay() {
+  if (!current) return;
+  if (audio.paused) { audio.play(); actCard(current.id); setPP(false); }
+  else              { audio.pause(); deactCard(current.id); setPP(true); }
+}
+function stopAudio() {
+  if (!current) return;
+  audio.pause(); audio.currentTime = 0;
+  deactCard(current.id); current = null;
+  document.getElementById('player').classList.add('hidden');
+  document.getElementById('pfill').style.width = '0%';
+  setPP(true);
+}
+function onEnd() { if (current) deactCard(current.id); setPP(true); }
+
+function onTick() {
+  if (!audio.duration) return;
+  const pct = audio.currentTime / audio.duration;
+  document.getElementById('pfill').style.width  = (pct*100) + '%';
+  document.getElementById('pSub').textContent   =
+    `${fmtDur(audio.currentTime)} / ${fmtDur(audio.duration)}`;
+  if (current) {
+    const cp = document.getElementById(`cp-${current.id}`);
+    if (cp) cp.style.width = (pct*100) + '%';
+    renderWF(current.id, pct);
+  }
+}
+
+function seek(e) {
+  if (!audio.duration) return;
+  const r = e.currentTarget.getBoundingClientRect();
+  audio.currentTime = ((e.clientX - r.left) / r.width) * audio.duration;
+}
+function seekWf(e, id) {
+  const c = document.getElementById(`wf-${id}`);
+  if (!c || !audio.duration) return;
+  const r   = c.getBoundingClientRect();
+  audio.currentTime = ((e.clientX - r.left) / r.width) * audio.duration;
+}
+
+function setPP(paused) {
+  document.getElementById('ppIcon').innerHTML = paused
+    ? '<path d="M8 5v14l11-7z"/>'
+    : '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+}
+
+function setVol(v) {
+  lastVol = parseInt(v); audio.volume = lastVol / 100;
+  muted = lastVol === 0;
+  setVI(lastVol === 0 ? 'mute' : lastVol < 50 ? 'low' : 'high');
+}
+function toggleMute() {
+  if (muted) {
+    muted = false; audio.volume = lastVol/100;
+    document.getElementById('vslider').value = lastVol;
+    setVI(lastVol < 50 ? 'low' : 'high');
+  } else {
+    muted = true; audio.volume = 0;
+    document.getElementById('vslider').value = 0;
+    setVI('mute');
+  }
+}
+function setVI(t) {
+  const icons = {
+    mute:`<path d="M11 5L6 9H2v6h4l5 4V5z" stroke-linecap="round"/><path d="M23 9l-6 6M17 9l6 6" stroke-linecap="round" stroke-width="2"/>`,
+    low: `<path d="M11 5L6 9H2v6h4l5 4V5z" stroke-linecap="round"/><path d="M15.54 8.46a5 5 0 010 7.07" stroke-linecap="round"/>`,
+    high:`<path d="M11 5L6 9H2v6h4l5 4V5z" stroke-linecap="round"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" stroke-linecap="round"/>`
+  };
+  document.getElementById('vicon').innerHTML = icons[t];
+}
+
+// ── WAVEFORM ──
+function drawWF(id) {
+  const canvas = document.getElementById(`wf-${id}`);
+  if (!canvas) return;
+  const W = canvas.parentElement.offsetWidth || 320;
+  canvas.width = W * 2; canvas.height = 68;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = '34px';
+  if (!wfData[id]) {
+    wfData[id] = Array.from({length:90}, () => 0.15 + Math.random()*0.85);
+  }
+  renderWF(id, 0);
+}
+
+function renderWF(id, progress) {
+  const canvas = document.getElementById(`wf-${id}`);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const bars = wfData[id]; if (!bars) return;
+  ctx.clearRect(0,0,W,H);
+  const bw = W / bars.length;
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const played   = '#2563eb';
+  const unplayed = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+
+  bars.forEach((v, i) => {
+    const x  = i * bw;
+    const bh = v * H * 0.88;
+    const y  = (H - bh) / 2;
+    ctx.fillStyle = (i / bars.length) <= progress ? played : unplayed;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x+1, y, Math.max(bw-2, 1), bh, 2);
+    else ctx.rect(x+1, y, Math.max(bw-2,1), bh);
+    ctx.fill();
+  });
+}
+
+// ── FAVORITES ──
+function toggleFav(e, s) {
+  e.stopPropagation();
+  const i = favs.findIndex(f => f.id === s.id);
+  const btn = document.getElementById(`fb-${s.id}`);
+  if (i === -1) {
+    favs.push(s);
+    if (btn) { btn.classList.add('fav'); btn.querySelector('svg').setAttribute('fill','currentColor'); }
+    toast('Añadido a favoritos ♥');
+  } else {
+    favs.splice(i,1);
+    if (btn) { btn.classList.remove('fav'); btn.querySelector('svg').setAttribute('fill','none'); }
+    toast('Eliminado de favoritos');
+  }
+  localStorage.setItem('sh_favs', JSON.stringify(favs));
+  renderFavs();
+}
+function renderFavs() {
+  const list = document.getElementById('flist');
+  const empty= document.getElementById('emptyFav');
+  list.innerHTML = '';
+  empty.style.display = favs.length ? 'none' : 'flex';
+  favs.forEach(s => list.appendChild(mkCard(s)));
+}
+
+// ── HISTORY ──
+function addHist(q) {
+  hist = hist.filter(h => h !== q);
+  hist.unshift(q);
+  if (hist.length > 20) hist.pop();
+  localStorage.setItem('sh_hist', JSON.stringify(hist));
+  renderHist();
+}
+function renderHist() {
+  const list = document.getElementById('hlist');
+  const empty= document.getElementById('emptyH');
+  list.innerHTML = '';
+  empty.style.display = hist.length ? 'none' : 'flex';
+  hist.forEach(q => {
+    const el = document.createElement('div');
+    el.className = 'hitem';
+    el.innerHTML = `
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3" stroke-linecap="round"/>
+      </svg>
+      <span>${esc(q)}</span>
+      <button class="hdel" onclick="rmHist(event,'${esc(q)}')">
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/>
+        </svg>
+      </button>`;
+    el.addEventListener('click', () => {
+      document.getElementById('searchInput').value = q;
+      document.getElementById('clearBtn').classList.add('show');
+      query = q; search(true);
+    });
+    list.appendChild(el);
+  });
+}
+function rmHist(e, q) { e.stopPropagation(); hist = hist.filter(h=>h!==q); localStorage.setItem('sh_hist',JSON.stringify(hist)); renderHist(); }
+function clearHist()  { hist=[]; localStorage.setItem('sh_hist','[]'); renderHist(); }
+
+// ── DOWNLOAD ──
+function dlSound(e, id, name) {
+  e.stopPropagation();
+  const url = `https://freesound.org/apiv2/sounds/${id}/download/?token=${API_KEY}`;
+  toast('Abriendo descarga…');
+  const a = Object.assign(document.createElement('a'), {href:url, target:'_blank', download:name});
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+// ── UI HELPERS ──
+function setSort(s) {
+  sort = s;
+  document.querySelectorAll('[id^="cs-"]').forEach(el => el.classList.remove('on'));
+  document.getElementById(`cs-${s}`)?.classList.add('on');
+  if (query) search(true);
+}
+function toggleFPanel() {
+  document.getElementById('fpanel').classList.toggle('open');
+  document.getElementById('ftoggle').classList.toggle('on');
+}
+function onDur(v) {
+  fDur = parseInt(v);
+  document.getElementById('durLbl').textContent = fDur >= 300 ? '∞' : `${fDur}s`;
+  clearTimeout(dTimer);
+  dTimer = setTimeout(() => { if(query) search(true); }, 600);
+}
+function tab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
+  document.getElementById(`t-${name}`)?.classList.add('on');
+  document.getElementById(`p-${name}`)?.classList.add('on');
+}
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('clearBtn').classList.remove('show');
+  closeAC(); resetResults();
+}
+function resetResults() {
+  query = '';
+  document.getElementById('rlist').innerHTML  = '';
+  document.getElementById('rinfo').style.display = 'none';
+  document.getElementById('emptyR').style.display = 'flex';
+  document.getElementById('emptyR').innerHTML = `
+    <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+      <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
+    </svg>
+    <p>Busca cualquier sonido</p>
+    <small>Usa el campo superior para explorar<br/>la biblioteca de Freesound</small>`;
+}
+function showEmptyR() {
+  document.getElementById('emptyR').style.display = 'flex';
+  document.getElementById('emptyR').innerHTML = `
+    <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+      <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
+    </svg>
+    <p>Sin resultados para "<strong>${esc(query)}</strong>"</p>
+    <small>Prueba con otro término o cambia los filtros</small>`;
+}
+
+function fmtDur(s) {
+  if (!s) return '0:00';
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2300);
+}
+</script>
+</body>
+</html>
