@@ -3,133 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoundMaster Pro</title>
+    <title>SoundMaster Pro Fix</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: #0d1117; 
-            color: #c9d1d9; 
-            margin: 0; 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-        }
-        .container { width: 100%; max-width: 450px; }
-        header { 
-            position: sticky; 
-            top: 0; 
-            background: #0d1117; 
-            padding: 10px 0 20px 0; 
-            z-index: 10; 
-            text-align: center;
-        }
-        h1 { color: #58a6ff; font-size: 1.8rem; margin: 0 0 15px 0; }
+        body { font-family: sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; text-align: center; }
+        .container { width: 100%; max-width: 450px; margin: auto; }
+        .search-container { display: flex; gap: 8px; margin: 20px 0; }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #30363d; background: #161b22; color: white; outline: none; }
+        #btnBuscar { background: #238636; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         
-        .search-container { display: flex; gap: 8px; }
-        input { 
-            flex: 1; 
-            padding: 12px 15px; 
-            border-radius: 8px; 
-            border: 1px solid #30363d; 
-            background: #161b22; 
-            color: white; 
-            font-size: 16px; 
-            outline: none;
-        }
-        #btnBuscar { 
-            background: #238636; 
-            color: white; 
-            border: none; 
-            padding: 0 20px; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            cursor: pointer; 
-        }
-
-        #lista-sonidos { margin-top: 20px; width: 100%; }
-        .card { 
-            background: #161b22; 
-            border: 1px solid #30363d; 
-            border-radius: 10px; 
-            padding: 15px; 
-            margin-bottom: 10px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-        }
-        .info h3 { margin: 0; font-size: 14px; color: #f0f6fc; }
-        .info p { margin: 5px 0 0; font-size: 11px; color: #8b949e; }
-
-        .play-btn { 
-            background: #58a6ff; 
-            border: none; 
-            width: 45px; 
-            height: 45px; 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            cursor: pointer; 
-        }
-        .play-btn svg { fill: #0d1117; width: 20px; height: 20px; }
+        #lista-sonidos { width: 100%; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .info { text-align: left; }
+        .info h3 { margin: 0; font-size: 14px; color: #58a6ff; }
         
-        .status { text-align: center; margin-top: 40px; color: #8b949e; }
+        .play-btn { background: #58a6ff; border: none; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .play-btn svg { fill: #0d1117; width: 24px; height: 24px; }
+        .status { margin-top: 20px; color: #8b949e; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <header>
-            <h1>🔊 SoundMaster</h1>
-            <div class="search-container">
-                <input type="text" id="buscador" placeholder="Busca un sonido (ej: laser)...">
-                <button id="btnBuscar">BUSCAR</button>
-            </div>
-        </header>
-
-        <main id="lista-sonidos">
-            <div class="status">Escribe algo para buscar sonidos</div>
-        </main>
+        <h1>🔊 SoundMaster</h1>
+        <div class="search-container">
+            <input type="text" id="buscador" placeholder="Busca: laser, thunder, cat...">
+            <button id="btnBuscar">BUSCAR</button>
+        </div>
+        <div id="lista-sonidos"></div>
     </div>
 
     <script>
-        // API KEY YA INTEGRADA
-        const API_KEY = 'YFByugODV8MeAK89o3eIdo21XVHbXygM5gNP2u7Z'; 
+        const API_KEY = 'YFByugODV8MeAK89o3eIdo21XVHbXygM5gNP2u7Z';
         const contenedor = document.getElementById('lista-sonidos');
         const buscador = document.getElementById('buscador');
-        const btnBuscar = document.getElementById('btnBuscar');
         let audioActual = null;
+
+        // PRE-CARGA: Crear un objeto de audio global para "despertar" el motor de sonido en Android
+        const motorAudio = new Audio();
 
         async function buscarSonidos() {
             const query = buscador.value.trim();
             if (!query) return;
+            contenedor.innerHTML = '<div class="status">Buscando...</div>';
 
-            contenedor.innerHTML = '<div class="status">Buscando en Freesound...</div>';
-
-            // Llamada a la API
-            const url = `https://freesound.org/apiv2/search/text/?query=${query}&token=${API_KEY}&fields=name,username,previews,duration&page_size=15`;
+            // Aumentado a 50 resultados
+            const url = `https://freesound.org/apiv2/search/text/?query=${query}&token=${API_KEY}&fields=name,username,previews,duration&page_size=50`;
 
             try {
                 const response = await fetch(url);
                 const data = await response.json();
-                
-                if (data.results && data.results.length > 0) {
-                    renderizar(data.results);
-                } else {
-                    contenedor.innerHTML = '<div class="status">No se encontraron sonidos. intenta con otra palabra.</div>';
-                }
+                renderizar(data.results);
             } catch (error) {
-                contenedor.innerHTML = '<div class="status">Error al conectar con la base de datos.</div>';
+                contenedor.innerHTML = '<div class="status">Error de conexión.</div>';
             }
         }
 
         function renderizar(sonidos) {
             contenedor.innerHTML = '';
+            if (sonidos.length === 0) {
+                contenedor.innerHTML = '<div class="status">No hay resultados.</div>';
+                return;
+            }
             sonidos.forEach(s => {
-                // Forzamos HTTPS para evitar bloqueos en la APK
                 const audioUrl = s.previews['preview-hq-mp3'].replace('http://', 'https://');
-                
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
@@ -137,24 +73,44 @@
                         <h3>${s.name}</h3>
                         <p>${Math.round(s.duration)}s • @${s.username}</p>
                     </div>
-                    <button class="play-btn" onclick="reproducir('${audioUrl}')">
+                    <button class="play-btn" data-url="${audioUrl}">
                         <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                     </button>
                 `;
                 contenedor.appendChild(card);
             });
+
+            // Asignar eventos de click después de renderizar
+            document.querySelectorAll('.play-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    reproducir(this.getAttribute('data-url'));
+                });
+            });
         }
 
         function reproducir(url) {
+            // Detener cualquier audio previo
             if (audioActual) {
                 audioActual.pause();
-                audioActual.currentTime = 0;
+                audioActual.src = "";
+                audioActual.load();
             }
-            audioActual = new Audio(url);
-            audioActual.play().catch(e => console.log("Esperando interacción..."));
+
+            // Crear nueva instancia de audio
+            audioActual = new Audio();
+            audioActual.crossOrigin = "anonymous"; // Evita bloqueos de CORS
+            audioActual.src = url;
+            
+            // Intentar reproducir con una promesa para capturar errores
+            audioActual.play().then(() => {
+                console.log("Reproduciendo...");
+            }).catch(e => {
+                console.error("Error de reproducción:", e);
+                alert("Pulsa de nuevo para confirmar la reproducción.");
+            });
         }
 
-        btnBuscar.onclick = buscarSonidos;
+        document.getElementById('btnBuscar').onclick = buscarSonidos;
         buscador.onkeypress = (e) => { if (e.key === 'Enter') buscarSonidos(); };
     </script>
 </body>
