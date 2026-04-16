@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SoundMaster Ultimate</title>
+    <title>SoundMaster Elite</title>
     <style>
         :root { --primary: #58a6ff; --bg: #0d1117; --card-bg: #161b22; --border: #30363d; --success: #238636; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #c9d1d9; margin: 0; padding: 10px; padding-bottom: 90px; }
@@ -12,24 +12,24 @@
         header { position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 100; border-bottom: 1px solid var(--border); }
         h1 { color: var(--primary); font-size: 1.4rem; text-align: center; margin: 5px 0; }
         
-        /* Filtro de Rango Dual */
+        /* Panel de Filtro Rediseñado */
         .filter-panel { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
-        .range-container { position: relative; height: 40px; margin: 15px 0; }
-        input[type="range"] { position: absolute; width: 100%; pointer-events: none; -webkit-appearance: none; background: none; }
-        input[type="range"]::-webkit-slider-thumb { height: 18px; width: 18px; border-radius: 50%; background: var(--primary); pointer-events: auto; -webkit-appearance: none; cursor: pointer; }
-        .track { position: absolute; width: 100%; height: 6px; background: #30363d; top: 50%; transform: translateY(-50%); border-radius: 3px; }
+        .range-container { position: relative; height: 30px; margin: 10px 0; display: flex; align-items: center; }
+        input[type="range"] { position: absolute; width: 100%; pointer-events: none; -webkit-appearance: none; background: none; margin: 0; }
+        input[type="range"]::-webkit-slider-thumb { height: 20px; width: 20px; border-radius: 50%; background: var(--primary); pointer-events: auto; -webkit-appearance: none; cursor: pointer; border: 2px solid white; }
+        .track { position: absolute; width: 100%; height: 6px; background: #30363d; border-radius: 3px; }
         
-        .range-labels { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; }
+        .range-labels { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: var(--primary); }
+        .btn-plus { background: #8957e5; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
         
-        .search-container { display: flex; gap: 8px; margin-top: 10px; }
+        .search-container { display: flex; gap: 8px; margin-top: 15px; }
         input[type="text"] { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #0d1117; color: white; }
         #btnBuscar { background: var(--success); color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
 
         .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
-        .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; color: #8b949e; }
+        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; color: #8b949e; }
         .tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); font-weight: bold; }
 
-        /* Tarjetas */
         .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
         .info h3 { margin: 0; font-size: 14px; color: #f0f6fc; }
         .time-display { font-family: monospace; color: #39ff14; font-size: 11px; margin-top: 5px; display: none; }
@@ -40,26 +40,44 @@
         .stop { background: #da3633; color: white; display: none; }
         .fav { background: #30363d; color: #8b949e; flex: 0.3; }
         .fav.is-fav { color: #e3b341; border: 1px solid #e3b341; }
-        .dl { background: #21262d; flex: 0.3; color: white; }
+        .dl { background: #21262d; flex: 0.3; color: white; border: 1px solid var(--border); }
 
-        #btnHome { position: fixed; bottom: 20px; right: 20px; width: 55px; height: 55px; background: var(--primary); border-radius: 50%; border: none; font-size: 24px; z-index: 1000; }
+        /* BOTÓN HOME - Garantizado siempre visible */
+        #btnHome { 
+            position: fixed; 
+            bottom: 25px; 
+            right: 25px; 
+            width: 60px; 
+            height: 60px; 
+            background: var(--primary); 
+            color: #0d1117;
+            border-radius: 50%; 
+            border: 3px solid #0d1117; 
+            font-size: 28px; 
+            z-index: 9999; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>🔊 SoundMaster Ultimate</h1>
+        <h1>🔊 SoundMaster Elite</h1>
         <div class="filter-panel">
             <div class="range-labels">
                 <span>Min: <b id="lblMin">0</b>s</span>
-                <span id="btnPlus" onclick="extender()" style="color:var(--primary); cursor:pointer;">+3600s</span>
-                <span>Max: <b id="lblMax">1800</b>s</span>
+                <button class="btn-plus" onclick="extenderRango()">+ Rango</button>
+                <span>Max: <b id="lblMax">600</b>s</span>
             </div>
             <div class="range-container">
                 <div class="track"></div>
-                <input type="range" id="rangeMin" min="0" max="1800" value="0">
-                <input type="range" id="rangeMax" min="0" max="1800" value="1800">
+                <input type="range" id="rangeMin" min="0" max="600" value="0">
+                <input type="range" id="rangeMax" min="0" max="600" value="600">
             </div>
             <div class="search-container">
                 <input type="text" id="buscador" placeholder="Buscar sonido...">
@@ -91,41 +109,57 @@
     let resultadosBusqueda = [];
     let favoritos = JSON.parse(localStorage.getItem('soundFavs')) || [];
 
-    // Lógica Slider Dual
-    [rMin, rMax].forEach(input => {
-        input.oninput = () => {
-            if(parseInt(rMin.value) >= parseInt(rMax.value)) {
-                if(input.id === 'rangeMin') rMin.value = rMax.value - 1;
-                else rMax.value = parseInt(rMin.value) + 1;
-            }
-            document.getElementById('lblMin').innerText = rMin.value;
-            document.getElementById('lblMax').innerText = rMax.value;
-        };
-    });
+    // Lógica Slider Dual mejorada
+    function sincronizarSliders() {
+        const valMin = parseInt(rMin.value);
+        const valMax = parseInt(rMax.value);
+        
+        if (valMin >= valMax) {
+            rMin.value = valMax - 1;
+        }
+        document.getElementById('lblMin').innerText = rMin.value;
+        document.getElementById('lblMax').innerText = rMax.value;
+    }
 
-    function extender() {
-        rMax.max = rMax.max == "1800" ? "3600" : "1800";
-        document.getElementById('btnPlus').innerText = rMax.max == "3600" ? "-1800s" : "+3600s";
+    rMin.oninput = sincronizarSliders;
+    rMax.oninput = sincronizarSliders;
+
+    function extenderRango() {
+        let actualMax = parseInt(rMax.max);
+        if (actualMax < 3600) {
+            let nuevoMax = actualMax + 600;
+            rMin.max = nuevoMax;
+            rMax.max = nuevoMax;
+            rMax.value = nuevoMax;
+            alert("Rango ampliado a " + nuevoMax + "s");
+        } else {
+            rMin.max = 600;
+            rMax.max = 600;
+            rMax.value = 600;
+            alert("Rango reseteado a 600s");
+        }
+        sincronizarSliders();
     }
 
     async function buscarSonidos() {
-        if (!buscador.value.trim()) return;
+        const q = buscador.value.trim();
+        if (!q) return;
         vistaActual = 'explorar';
-        document.getElementById('tabExplorar').click();
-        contenedor.innerHTML = '<p style="text-align:center">Buscando...</p>';
+        actualizarTabs();
+        contenedor.innerHTML = '<p style="text-align:center; margin-top:50px;">Buscando sonidos...</p>';
         
-        const url = `https://freesound.org/apiv2/search/text/?query=${buscador.value}&filter=duration:[${rMin.value} TO ${rMax.value}]&token=${API_KEY}&fields=id,name,username,previews,duration&page_size=40`;
+        const url = `https://freesound.org/apiv2/search/text/?query=${q}&filter=duration:[${rMin.value} TO ${rMax.value}]&token=${API_KEY}&fields=id,name,username,previews,duration&page_size=40`;
 
         try {
             const res = await fetch(url);
             const data = await res.json();
             resultadosBusqueda = data.results;
             renderizar(resultadosBusqueda);
-        } catch (e) { alert("Error de red"); }
+        } catch (e) { alert("Error de conexión"); }
     }
 
     function renderizar(lista) {
-        contenedor.innerHTML = lista.length ? '' : '<p style="text-align:center">No hay resultados</p>';
+        contenedor.innerHTML = lista.length ? '' : '<p style="text-align:center; margin-top:50px;">Sin resultados en este rango.</p>';
         lista.forEach(s => {
             const audioUrl = s.previews['preview-hq-mp3'].replace('http://', 'https://');
             const esFav = favoritos.some(f => f.id === s.id);
@@ -138,13 +172,22 @@
                     <div class="time-display" id="time-${s.id}">00:00 / 00:00</div>
                 </div>
                 <div class="actions">
-                    <button class="btn dl" onclick="window.open('${audioUrl}')">💾</button>
+                    <button class="btn dl" onclick="descargar('${audioUrl}')">💾</button>
                     <button class="btn fav ${esFav ? 'is-fav' : ''}" onclick="toggleFav(${s.id})">⭐</button>
                     <button class="btn play" id="p-${s.id}" onclick="atacar('${audioUrl}', ${s.id})">▶</button>
                     <button class="btn stop" id="s-${s.id}" onclick="parar(${s.id})">⏹ STOP</button>
                 </div>`;
             contenedor.appendChild(card);
         });
+    }
+
+    function descargar(url) {
+        // En Android esto dispara la descarga sin cerrar la app
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.download = "sonido.mp3";
+        link.click();
     }
 
     function atacar(url, id) {
@@ -166,9 +209,12 @@
 
     function parar(id) {
         player.pause();
-        document.getElementById(`p-${id}`).style.display = 'flex';
-        document.getElementById(`s-${id}`).style.display = 'none';
-        document.getElementById(`time-${id}`).style.display = 'none';
+        const p = document.getElementById(`p-${id}`);
+        const s = document.getElementById(`s-${id}`);
+        const t = document.getElementById(`time-${id}`);
+        if(p) p.style.display = 'flex';
+        if(s) s.style.display = 'none';
+        if(t) t.style.display = 'none';
         clearInterval(timerInterval);
     }
 
@@ -194,20 +240,13 @@
         return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
     }
 
-    document.getElementById('tabExplorar').onclick = () => {
-        vistaActual = 'explorar';
-        document.getElementById('tabExplorar').classList.add('active');
-        document.getElementById('tabFavoritos').classList.remove('active');
-        renderizar(resultadosBusqueda);
-    };
+    function actualizarTabs() {
+        document.getElementById('tabExplorar').classList.toggle('active', vistaActual === 'explorar');
+        document.getElementById('tabFavoritos').classList.toggle('active', vistaActual === 'favoritos');
+    }
 
-    document.getElementById('tabFavoritos').onclick = () => {
-        vistaActual = 'favoritos';
-        document.getElementById('tabFavoritos').classList.add('active');
-        document.getElementById('tabExplorar').classList.remove('active');
-        renderizar(favoritos);
-    };
-
+    document.getElementById('tabExplorar').onclick = () => { vistaActual = 'explorar'; actualizarTabs(); renderizar(resultadosBusqueda); };
+    document.getElementById('tabFavoritos').onclick = () => { vistaActual = 'favoritos'; actualizarTabs(); renderizar(favoritos); };
     document.getElementById('btnBuscar').onclick = buscarSonidos;
     buscador.onkeypress = (e) => e.key === 'Enter' && buscarSonidos();
 </script>
