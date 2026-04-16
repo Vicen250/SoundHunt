@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoundMaster App</title>
+    <title>SoundMaster Pro</title>
     <style>
-        /* Diseño Moderno y Oscuro */
         body { 
-            font-family: 'Segoe UI', Arial, sans-serif; 
+            font-family: 'Segoe UI', sans-serif; 
             background: #0d1117; 
             color: #c9d1d9; 
             margin: 0; 
@@ -27,7 +26,6 @@
         }
         h1 { color: #58a6ff; font-size: 1.8rem; margin: 0 0 15px 0; }
         
-        /* Buscador */
         .search-container { display: flex; gap: 8px; }
         input { 
             flex: 1; 
@@ -39,7 +37,6 @@
             font-size: 16px; 
             outline: none;
         }
-        input:focus { border-color: #58a6ff; }
         #btnBuscar { 
             background: #238636; 
             color: white; 
@@ -50,7 +47,6 @@
             cursor: pointer; 
         }
 
-        /* Lista de Resultados */
         #lista-sonidos { margin-top: 20px; width: 100%; }
         .card { 
             background: #161b22; 
@@ -61,14 +57,10 @@
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            transition: transform 0.2s;
         }
-        .card:active { transform: scale(0.98); }
-        .info { flex: 1; margin-right: 10px; }
-        .info h3 { margin: 0; font-size: 15px; color: #f0f6fc; }
-        .info p { margin: 5px 0 0; font-size: 12px; color: #8b949e; }
+        .info h3 { margin: 0; font-size: 14px; color: #f0f6fc; }
+        .info p { margin: 5px 0 0; font-size: 11px; color: #8b949e; }
 
-        /* Botón de Play */
         .play-btn { 
             background: #58a6ff; 
             border: none; 
@@ -82,7 +74,7 @@
         }
         .play-btn svg { fill: #0d1117; width: 20px; height: 20px; }
         
-        .status { text-align: center; margin-top: 40px; color: #8b949e; font-size: 14px; }
+        .status { text-align: center; margin-top: 40px; color: #8b949e; }
     </style>
 </head>
 <body>
@@ -91,32 +83,32 @@
         <header>
             <h1>🔊 SoundMaster</h1>
             <div class="search-container">
-                <input type="text" id="buscador" placeholder="Ej: trueno, gato, explosión...">
+                <input type="text" id="buscador" placeholder="Busca un sonido (ej: laser)...">
                 <button id="btnBuscar">BUSCAR</button>
             </div>
         </header>
 
         <main id="lista-sonidos">
-            <div class="status">Busca sonidos para empezar a reproducir</div>
+            <div class="status">Escribe algo para buscar sonidos</div>
         </main>
     </div>
 
     <script>
-        // CONFIGURACIÓN
-        const API_KEY = 'TU_API_KEY_AQUI'; // <--- PEGA AQUÍ TU TOKEN DE FREESOUND
+        // API KEY YA INTEGRADA
+        const API_KEY = 'YFByugODV8MeAK89o3eIdo21XVHbXygM5gNP2u7Z'; 
         const contenedor = document.getElementById('lista-sonidos');
         const buscador = document.getElementById('buscador');
         const btnBuscar = document.getElementById('btnBuscar');
         let audioActual = null;
 
-        // Función de búsqueda
         async function buscarSonidos() {
             const query = buscador.value.trim();
             if (!query) return;
 
-            contenedor.innerHTML = '<div class="status">Buscando...</div>';
+            contenedor.innerHTML = '<div class="status">Buscando en Freesound...</div>';
 
-            const url = `https://freesound.org/apiv2/search/text/?query=${query}&token=${API_KEY}&fields=name,username,previews,duration&page_size=20`;
+            // Llamada a la API
+            const url = `https://freesound.org/apiv2/search/text/?query=${query}&token=${API_KEY}&fields=name,username,previews,duration&page_size=15`;
 
             try {
                 const response = await fetch(url);
@@ -125,19 +117,17 @@
                 if (data.results && data.results.length > 0) {
                     renderizar(data.results);
                 } else {
-                    contenedor.innerHTML = '<div class="status">No se encontraron resultados.</div>';
+                    contenedor.innerHTML = '<div class="status">No se encontraron sonidos. intenta con otra palabra.</div>';
                 }
             } catch (error) {
-                console.error(error);
-                contenedor.innerHTML = '<div class="status">Error de conexión. Verifica tu API Key.</div>';
+                contenedor.innerHTML = '<div class="status">Error al conectar con la base de datos.</div>';
             }
         }
 
-        // Crear las tarjetas en pantalla
         function renderizar(sonidos) {
             contenedor.innerHTML = '';
             sonidos.forEach(s => {
-                // Forzar HTTPS para evitar bloqueos en Android
+                // Forzamos HTTPS para evitar bloqueos en la APK
                 const audioUrl = s.previews['preview-hq-mp3'].replace('http://', 'https://');
                 
                 const card = document.createElement('div');
@@ -155,27 +145,17 @@
             });
         }
 
-        // Lógica de reproducción
         function reproducir(url) {
-            try {
-                if (audioActual) {
-                    audioActual.pause();
-                    audioActual.currentTime = 0;
-                }
-                audioActual = new Audio(url);
-                audioActual.play().catch(e => {
-                    alert("Error: Haz clic de nuevo para reproducir.");
-                });
-            } catch (err) {
-                console.error("Error al reproducir audio:", err);
+            if (audioActual) {
+                audioActual.pause();
+                audioActual.currentTime = 0;
             }
+            audioActual = new Audio(url);
+            audioActual.play().catch(e => console.log("Esperando interacción..."));
         }
 
-        // Eventos
-        btnBuscar.addEventListener('click', buscarSonidos);
-        buscador.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') buscarSonidos();
-        });
+        btnBuscar.onclick = buscarSonidos;
+        buscador.onkeypress = (e) => { if (e.key === 'Enter') buscarSonidos(); };
     </script>
 </body>
 </html>
