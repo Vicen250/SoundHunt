@@ -3,69 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SoundMaster Extreme</title>
+    <title>SoundMaster Ultimate</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; padding: 10px; padding-bottom: 90px; }
+        :root { --primary: #58a6ff; --bg: #0d1117; --card-bg: #161b22; --border: #30363d; --success: #238636; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #c9d1d9; margin: 0; padding: 10px; padding-bottom: 90px; }
         .container { width: 100%; max-width: 500px; margin: auto; }
         
-        header { position: sticky; top: 0; background: #0d1117; padding: 10px 0; z-index: 100; border-bottom: 1px solid #30363d; }
-        h1 { color: #58a6ff; font-size: 1.4rem; text-align: center; margin: 5px 0; }
+        header { position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+        h1 { color: var(--primary); font-size: 1.4rem; text-align: center; margin: 5px 0; }
         
-        /* Panel de Filtros */
-        .filter-panel { background: #161b22; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #30363d; }
-        .filter-row { margin: 10px 0; }
-        .range-labels { display: flex; justify-content: space-between; font-size: 12px; color: #8b949e; margin-bottom: 5px; }
-        input[type="range"] { width: 100%; cursor: pointer; }
-        .btn-plus { background: #8957e5; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; float: right; }
+        /* Filtro de Rango Dual */
+        .filter-panel { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
+        .range-container { position: relative; height: 40px; margin: 15px 0; }
+        input[type="range"] { position: absolute; width: 100%; pointer-events: none; -webkit-appearance: none; background: none; }
+        input[type="range"]::-webkit-slider-thumb { height: 18px; width: 18px; border-radius: 50%; background: var(--primary); pointer-events: auto; -webkit-appearance: none; cursor: pointer; }
+        .track { position: absolute; width: 100%; height: 6px; background: #30363d; top: 50%; transform: translateY(-50%); border-radius: 3px; }
+        
+        .range-labels { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; }
+        
+        .search-container { display: flex; gap: 8px; margin-top: 10px; }
+        input[type="text"] { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #0d1117; color: white; }
+        #btnBuscar { background: var(--success); color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
 
-        .search-container { display: flex; gap: 8px; margin-top: 15px; }
-        input[type="text"] { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #30363d; background: #0d1117; color: white; font-size: 16px; }
-        #btnBuscar { background: #238636; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; }
+        .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+        .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; color: #8b949e; }
+        .tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); font-weight: bold; }
 
         /* Tarjetas */
-        .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 15px; margin-bottom: 12px; position: relative; }
-        .info h3 { margin: 0; font-size: 14px; color: #f0f6fc; padding-right: 60px; }
-        
-        /* Display de Tiempo */
-        .time-display { font-family: monospace; background: #000; color: #39ff14; padding: 2px 6px; border-radius: 4px; font-size: 12px; display: none; margin-top: 5px; border: 1px solid #39ff14; width: fit-content; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+        .info h3 { margin: 0; font-size: 14px; color: #f0f6fc; }
+        .time-display { font-family: monospace; color: #39ff14; font-size: 11px; margin-top: 5px; display: none; }
 
-        .actions { display: flex; gap: 8px; margin-top: 12px; }
-        .btn { border: none; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 14px; flex: 1; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .play { background: #58a6ff; color: #0d1117; }
+        .actions { display: flex; gap: 8px; margin-top: 10px; }
+        .btn { border: none; border-radius: 8px; padding: 10px; cursor: pointer; flex: 1; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+        .play { background: var(--primary); color: #0d1117; }
         .stop { background: #da3633; color: white; display: none; }
         .fav { background: #30363d; color: #8b949e; flex: 0.3; }
         .fav.is-fav { color: #e3b341; border: 1px solid #e3b341; }
+        .dl { background: #21262d; flex: 0.3; color: white; }
 
-        #btnHome { position: fixed; bottom: 20px; left: 20px; width: 55px; height: 55px; background: #58a6ff; color: #0d1117; border-radius: 50%; border: none; font-size: 24px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-        .status { text-align: center; margin-top: 40px; color: #8b949e; }
+        #btnHome { position: fixed; bottom: 20px; right: 20px; width: 55px; height: 55px; background: var(--primary); border-radius: 50%; border: none; font-size: 24px; z-index: 1000; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>🔊 SoundMaster Extreme</h1>
-        
+        <h1>🔊 SoundMaster Ultimate</h1>
         <div class="filter-panel">
-            <div class="filter-row">
-                <div class="range-labels">
-                    <span>Duración: <b id="valMin">0</b>s - <b id="valMax">1800</b>s</span>
-                    <button class="btn-plus" onclick="togglePlus()">+ 3600</button>
-                </div>
-                <input type="range" id="rangeMin" min="0" max="1800" value="0" oninput="updateLabels()">
-                <input type="range" id="rangeMax" min="0" max="1800" value="1800" oninput="updateLabels()">
+            <div class="range-labels">
+                <span>Min: <b id="lblMin">0</b>s</span>
+                <span id="btnPlus" onclick="extender()" style="color:var(--primary); cursor:pointer;">+3600s</span>
+                <span>Max: <b id="lblMax">1800</b>s</span>
             </div>
-            
+            <div class="range-container">
+                <div class="track"></div>
+                <input type="range" id="rangeMin" min="0" max="1800" value="0">
+                <input type="range" id="rangeMax" min="0" max="1800" value="1800">
+            </div>
             <div class="search-container">
-                <input type="text" id="buscador" placeholder="Ej: rain, thunder, ambient...">
+                <input type="text" id="buscador" placeholder="Buscar sonido...">
                 <button id="btnBuscar">BUSCAR</button>
             </div>
         </div>
+        <div class="tabs">
+            <div class="tab active" id="tabExplorar">Explorar</div>
+            <div class="tab" id="tabFavoritos">Favoritos ⭐</div>
+        </div>
     </header>
 
-    <main id="lista-sonidos">
-        <div class="status">Ajusta la duración y busca un sonido.</div>
-    </main>
+    <main id="lista-sonidos"></main>
 </div>
 
 <button id="btnHome" onclick="location.reload()">🏠</button>
@@ -76,124 +83,133 @@
     const player = document.getElementById('globalPlayer');
     const contenedor = document.getElementById('lista-sonidos');
     const buscador = document.getElementById('buscador');
+    const rMin = document.getElementById('rangeMin');
+    const rMax = document.getElementById('rangeMax');
     
     let timerInterval;
-    let favoritos = JSON.parse(localStorage.getItem('misFavoritos')) || [];
+    let vistaActual = 'explorar';
+    let resultadosBusqueda = [];
+    let favoritos = JSON.parse(localStorage.getItem('soundFavs')) || [];
 
-    function updateLabels() {
-        const min = document.getElementById('rangeMin').value;
-        const max = document.getElementById('rangeMax').value;
-        document.getElementById('valMin').innerText = min;
-        document.getElementById('valMax').innerText = max;
-    }
+    // Lógica Slider Dual
+    [rMin, rMax].forEach(input => {
+        input.oninput = () => {
+            if(parseInt(rMin.value) >= parseInt(rMax.value)) {
+                if(input.id === 'rangeMin') rMin.value = rMax.value - 1;
+                else rMax.value = parseInt(rMin.value) + 1;
+            }
+            document.getElementById('lblMin').innerText = rMin.value;
+            document.getElementById('lblMax').innerText = rMax.value;
+        };
+    });
 
-    function togglePlus() {
-        const rMax = document.getElementById('rangeMax');
-        if(rMax.max == "1800") {
-            rMax.max = "3600";
-            rMax.value = "3600";
-            alert("Límite extendido a 3600s (1 hora)");
-        } else {
-            rMax.max = "1800";
-            rMax.value = "1800";
-        }
-        updateLabels();
+    function extender() {
+        rMax.max = rMax.max == "1800" ? "3600" : "1800";
+        document.getElementById('btnPlus').innerText = rMax.max == "3600" ? "-1800s" : "+3600s";
     }
 
     async function buscarSonidos() {
-        const query = buscador.value.trim();
-        const min = document.getElementById('rangeMin').value;
-        const max = document.getElementById('rangeMax').value;
+        if (!buscador.value.trim()) return;
+        vistaActual = 'explorar';
+        document.getElementById('tabExplorar').click();
+        contenedor.innerHTML = '<p style="text-align:center">Buscando...</p>';
         
-        if (!query) return;
-        contenedor.innerHTML = '<div class="status">Filtrando sonidos...</div>';
-
-        // Filtro de duración integrado en la API: filter=duration:[MIN TO MAX]
-        const url = `https://freesound.org/apiv2/search/text/?query=${query}&filter=duration:[${min} TO ${max}]&token=${API_KEY}&fields=id,name,username,previews,duration&page_size=50`;
+        const url = `https://freesound.org/apiv2/search/text/?query=${buscador.value}&filter=duration:[${rMin.value} TO ${rMax.value}]&token=${API_KEY}&fields=id,name,username,previews,duration&page_size=40`;
 
         try {
-            const response = await fetch(url);
-            const data = await response.json();
-            renderizar(data.results);
-        } catch (e) {
-            contenedor.innerHTML = '<div class="status">Error de conexión.</div>';
-        }
+            const res = await fetch(url);
+            const data = await res.json();
+            resultadosBusqueda = data.results;
+            renderizar(resultadosBusqueda);
+        } catch (e) { alert("Error de red"); }
     }
 
-    function renderizar(sonidos) {
-        contenedor.innerHTML = '';
-        if (!sonidos || sonidos.length === 0) {
-            contenedor.innerHTML = '<div class="status">No hay sonidos en ese rango de tiempo.</div>';
-            return;
-        }
-
-        sonidos.forEach(s => {
+    function renderizar(lista) {
+        contenedor.innerHTML = lista.length ? '' : '<p style="text-align:center">No hay resultados</p>';
+        lista.forEach(s => {
             const audioUrl = s.previews['preview-hq-mp3'].replace('http://', 'https://');
             const esFav = favoritos.some(f => f.id === s.id);
             const card = document.createElement('div');
             card.className = 'card';
-            card.id = `card-${s.id}`;
             card.innerHTML = `
                 <div class="info">
                     <h3>${s.name}</h3>
                     <p>${Math.round(s.duration)}s • @${s.username}</p>
-                    <div class="time-display" id="display-${s.id}">00:00 / 00:00</div>
+                    <div class="time-display" id="time-${s.id}">00:00 / 00:00</div>
                 </div>
                 <div class="actions">
-                    <button class="btn fav ${esFav ? 'is-fav' : ''}" onclick="toggleFav('${s.id}')">⭐</button>
-                    <button class="btn play" id="btnPlay-${s.id}" onclick="controlAudio('play', '${audioUrl}', '${s.id}')">▶</button>
-                    <button class="btn stop" id="btnStop-${s.id}" onclick="controlAudio('stop', '', '${s.id}')">⏹ STOP</button>
-                </div>
-            `;
+                    <button class="btn dl" onclick="window.open('${audioUrl}')">💾</button>
+                    <button class="btn fav ${esFav ? 'is-fav' : ''}" onclick="toggleFav(${s.id})">⭐</button>
+                    <button class="btn play" id="p-${s.id}" onclick="atacar('${audioUrl}', ${s.id})">▶</button>
+                    <button class="btn stop" id="s-${s.id}" onclick="parar(${s.id})">⏹ STOP</button>
+                </div>`;
             contenedor.appendChild(card);
         });
     }
 
-    function controlAudio(action, url, id) {
-        // Resetear visualmente todas las tarjetas
+    function atacar(url, id) {
+        pararTodo();
+        player.src = url;
+        player.play();
+        document.getElementById(`p-${id}`).style.display = 'none';
+        document.getElementById(`s-${id}`).style.display = 'flex';
+        const disp = document.getElementById(`time-${id}`);
+        disp.style.display = 'block';
+        
+        timerInterval = setInterval(() => {
+            const cur = format(player.currentTime);
+            const tot = format(player.duration || 0);
+            disp.innerText = `${cur} / ${tot}`;
+            if(player.ended) parar(id);
+        }, 400);
+    }
+
+    function parar(id) {
+        player.pause();
+        document.getElementById(`p-${id}`).style.display = 'flex';
+        document.getElementById(`s-${id}`).style.display = 'none';
+        document.getElementById(`time-${id}`).style.display = 'none';
+        clearInterval(timerInterval);
+    }
+
+    function pararTodo() {
         document.querySelectorAll('.stop').forEach(b => b.style.display = 'none');
         document.querySelectorAll('.play').forEach(b => b.style.display = 'flex');
         document.querySelectorAll('.time-display').forEach(d => d.style.display = 'none');
         clearInterval(timerInterval);
-
-        if (action === 'stop') {
-            player.pause();
-            player.src = "";
-            return;
-        }
-
-        player.src = url;
-        player.play();
-
-        // Mostrar controles de la pista activa
-        const btnPlay = document.getElementById(`btnPlay-${id}`);
-        const btnStop = document.getElementById(`btnStop-${id}`);
-        const display = document.getElementById(`display-${id}`);
-
-        btnPlay.style.display = 'none';
-        btnStop.style.display = 'flex';
-        display.style.display = 'block';
-
-        // Actualizar el display de tiempo
-        timerInterval = setInterval(() => {
-            const current = formatTime(player.currentTime);
-            const total = formatTime(player.duration || 0);
-            display.innerText = `${current} / ${total}`;
-            if (player.ended) controlAudio('stop', '', id);
-        }, 500);
     }
 
-    function formatTime(secs) {
-        const mins = Math.floor(secs / 60);
-        const s = Math.floor(secs % 60);
-        return `${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    function toggleFav(id) {
+        const item = vistaActual === 'explorar' ? resultadosBusqueda.find(x => x.id == id) : favoritos.find(x => x.id == id);
+        const idx = favoritos.findIndex(x => x.id == id);
+        if(idx > -1) favoritos.splice(idx, 1);
+        else if(item) favoritos.push(item);
+        
+        localStorage.setItem('soundFavs', JSON.stringify(favoritos));
+        renderizar(vistaActual === 'explorar' ? resultadosBusqueda : favoritos);
     }
 
-    // Funciones básicas de Favoritos (se mantienen igual)
-    function toggleFav(id) { /* ... misma lógica anterior ... */ }
+    function format(t) {
+        const m = Math.floor(t/60), s = Math.floor(t%60);
+        return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    }
+
+    document.getElementById('tabExplorar').onclick = () => {
+        vistaActual = 'explorar';
+        document.getElementById('tabExplorar').classList.add('active');
+        document.getElementById('tabFavoritos').classList.remove('active');
+        renderizar(resultadosBusqueda);
+    };
+
+    document.getElementById('tabFavoritos').onclick = () => {
+        vistaActual = 'favoritos';
+        document.getElementById('tabFavoritos').classList.add('active');
+        document.getElementById('tabExplorar').classList.remove('active');
+        renderizar(favoritos);
+    };
 
     document.getElementById('btnBuscar').onclick = buscarSonidos;
-    buscador.onkeypress = (e) => { if (e.key === 'Enter') buscarSonidos(); };
+    buscador.onkeypress = (e) => e.key === 'Enter' && buscarSonidos();
 </script>
 </body>
 </html>
